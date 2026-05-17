@@ -31,7 +31,13 @@ export const getNoteById = async (req, res, next) => {
   const { id } = req.params;
   const { id: owner } = req.user;
 
-  const note = await NoteRepositories.getNoteById(id, owner);
+  const isOwner = await NoteRepositories.verifyNoteAccess(id, owner);
+
+  if (!isOwner) {
+    return next(new AuthorizationError('Anda tidak berhak mengakses resource ini'));
+  }
+
+  const note = await NoteRepositories.getNoteById(id);
 
   if (!note) {
     return next(new NotFoundError('Catatan tidak ditemukan'));
@@ -40,7 +46,7 @@ export const getNoteById = async (req, res, next) => {
   return response(res, 200, 'Catatan sukses ditampilkan', note);
 };
 
-export const editNote = async (req, res, next) => {
+export const editNoteById = async (req, res, next) => {
   const { id } = req.params;
   const {
     title,
@@ -49,7 +55,8 @@ export const editNote = async (req, res, next) => {
   } = req.validated;
 
   const { id: owner } = req.user;
-  const isOwner = await NoteRepositories.verifyNoteOwner(id, owner);
+
+  const isOwner = await NoteRepositories.verifyNoteAccess(id, owner);
 
   if (!isOwner) {
     return next(new AuthorizationError('Anda tidak berhak mengakses resource ini'));
